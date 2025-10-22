@@ -3,9 +3,7 @@ package me.icegames.iglanguages.api;
 import me.icegames.iglanguages.manager.LangManager;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Public API for interacting with the IGLanguages plugin.
@@ -118,5 +116,9 @@ public class IGLanguagesAPI {
      */
     public String detectPlayerLang(Player player) {
         return langManager.detectClientLanguage(player);
+    }
+
+    public List<String> getAvailableCategories(String lang) {
+        return langManager.getAvailableCategories(lang);
     }
 }

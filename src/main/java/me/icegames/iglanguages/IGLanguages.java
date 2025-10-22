@@ -39,12 +39,12 @@ public class IGLanguages extends JavaPlugin {
     private String consolePrefix;
 
     private void startingBanner() {
-        System.out.println("\u001B[36m  ___ \u001B[0m\u001B[1;36m____   \u001B[0m");
-        System.out.println("\u001B[36m |_ _\u001B[0m\u001B[1;36m/ ___|  \u001B[0m ");
-        System.out.println("\u001B[36m  | \u001B[0m\u001B[1;36m| |  _   \u001B[0m \u001B[36mI\u001B[0m\u001B[1;36mG\u001B[0m\u001B[1;37m" + pluginName + " \u001B[1;36mv" + pluginVersion + "\u001B[0m by \u001B[1;36mIceGames" + "\u001B[0m & \u001B[1;36mRainBowCreation");
-        System.out.println("\u001B[36m  | \u001B[0m\u001B[1;36m| |_| |  \u001B[0m \u001B[1;30m" + pluginDescription);
-        System.out.println("\u001B[36m |___\u001B[0m\u001B[1;36m\\____| \u001B[0m");
-        System.out.println("\u001B[36m         \u001B[0m");
+        plugin.getLogger().info("\u001B[36m  ___ \u001B[0m\u001B[1;36m____   \u001B[0m");
+        plugin.getLogger().info("\u001B[36m |_ _\u001B[0m\u001B[1;36m/ ___|  \u001B[0m ");
+        plugin.getLogger().info("\u001B[36m  | \u001B[0m\u001B[1;36m| |  _   \u001B[0m \u001B[36mI\u001B[0m\u001B[1;36mG\u001B[0m\u001B[1;37m" + pluginName + " \u001B[1;36mv" + pluginVersion + "\u001B[0m by \u001B[1;36mIceGames" + "\u001B[0m & \u001B[1;36mRainBowCreation");
+        plugin.getLogger().info("\u001B[36m  | \u001B[0m\u001B[1;36m| |_| |  \u001B[0m \u001B[1;30m" + pluginDescription);
+        plugin.getLogger().info("\u001B[36m |___\u001B[0m\u001B[1;36m\\____| \u001B[0m");
+        plugin.getLogger().info("\u001B[36m         \u001B[0m");
     }
 
     @Override
@@ -69,13 +69,13 @@ public class IGLanguages extends JavaPlugin {
 
         this.langManager = new LangManager(this, storage);
         langManager.loadAll();
-        System.out.println(consolePrefix + "Configuration successfully loaded.");
-        System.out.println(consolePrefix + "Loaded " + langManager.getAvailableLangs().size() + " languages! " + langManager.getAvailableLangs());
-        System.out.println(consolePrefix + "Loaded " + langManager.getTotalTranslationsCount() + " total translations!");
+        plugin.getLogger().info(consolePrefix + "Configuration successfully loaded.");
+        plugin.getLogger().info(consolePrefix + "Loaded " + langManager.getAvailableLangs().size() + " languages! " + langManager.getAvailableLangs());
+        plugin.getLogger().info(consolePrefix + "Loaded " + langManager.getTotalTranslationsCount() + " total translations!");
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new LangExpansion(langManager).register();
-            System.out.println(consolePrefix + "Registered PlaceholderAPI expansion.");
+            plugin.getLogger().info(consolePrefix + "Registered PlaceholderAPI expansion.");
         } else {
             getLogger().warning("Could not find PlaceholderAPI! Plugin will only work as API provider.");
             getLogger().warning("If you want to use auto-translate placeholder please install PlaceholderAPI to your plugins/ folder");
@@ -124,7 +124,7 @@ public class IGLanguages extends JavaPlugin {
                 .checkNow();
 
         long endTime = System.currentTimeMillis();
-        System.out.println(consolePrefix + "\u001B[1;32mPlugin loaded successfully in " + (endTime - startTime) + "ms\u001B[0m");
+        plugin.getLogger().info(consolePrefix + "\u001B[1;32mPlugin loaded successfully in " + (endTime - startTime) + "ms\u001B[0m");
     }
 
     public LangManager getLangManager() {
@@ -141,7 +141,7 @@ public class IGLanguages extends JavaPlugin {
 
     private void initDatabase() {
         String storageType = getConfig().getString("storage.type", "yaml").toLowerCase();
-        System.out.println(consolePrefix + "Loading storage...");
+        plugin.getLogger().info(consolePrefix + "Loading storage...");
         if (storageType.equals("sqlite")) {
             try {
                 storage = new SQLitePlayerLangStorage(getDataFolder() + "/players.db");
@@ -166,7 +166,7 @@ public class IGLanguages extends JavaPlugin {
         } else {
             storage = new YamlPlayerLangStorage(new File(getDataFolder(), "players.yml"));
         }
-        System.out.println(consolePrefix + "Database successfully initialized (" + storageType.toUpperCase() + ")");
+        plugin.getLogger().info(consolePrefix + "Database successfully initialized (" + storageType.toUpperCase() + ")");
     }
 
     private void migrateYamlToStorage(PlayerLangStorage targetStorage) {
