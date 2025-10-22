@@ -57,7 +57,6 @@ public class LangCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("reload")) {
             plugin.reloadConfig();
             langManager.loadAll();
-            langManager.clearCache();
             String consolePrefix = "\u001B[1;30m[\u001B[0m\u001B[36mI\u001B[1;36mG\u001B[0m\u001B[1;37m" + "Languages" + "\u001B[1;30m]\u001B[0m ";
             plugin.getLogger().info(consolePrefix + "Reloaded " + langManager.getAvailableLangs().size() + " languages! " + langManager.getAvailableLangs());
             plugin.getLogger().info(consolePrefix + "Reloaded " + langManager.getTotalTranslationsCount() + " total translations!");

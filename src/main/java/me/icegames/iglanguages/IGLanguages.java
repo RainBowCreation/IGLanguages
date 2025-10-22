@@ -37,6 +37,7 @@ public class IGLanguages extends JavaPlugin {
     private String pluginVersion;
     private final String pluginDescription = "The Multi-Language Plugin";
     private String consolePrefix;
+    private boolean isPlaceholderLoaded = false;
 
     private void startingBanner() {
         plugin.getLogger().info("\u001B[36m  ___ \u001B[0m\u001B[1;36m____   \u001B[0m");
@@ -76,6 +77,7 @@ public class IGLanguages extends JavaPlugin {
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new LangExpansion(langManager).register();
             plugin.getLogger().info(consolePrefix + "Registered PlaceholderAPI expansion.");
+            this.isPlaceholderLoaded = true;
         } else {
             getLogger().warning("Could not find PlaceholderAPI! Plugin will only work as API provider.");
             getLogger().warning("If you want to use auto-translate placeholder please install PlaceholderAPI to your plugins/ folder");
@@ -267,4 +269,6 @@ public class IGLanguages extends JavaPlugin {
     public static IGLanguagesAPI getAPI() {
         return api;
     }
+
+    public boolean hasPlaceholderAPI() { return isPlaceholderLoaded; }
 }

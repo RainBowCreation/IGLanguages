@@ -101,6 +101,14 @@ public class IGLanguagesAPI {
     }
 
     /**
+     * Get the default language
+     * @return The language code (e.g., "en_us").
+     */
+    public String getDefaultLang() {
+        return langManager.getDefaultLang();
+    }
+
+    /**
      * Removes a player's language, resetting it to the default language.
      * @param player The target player.
      */

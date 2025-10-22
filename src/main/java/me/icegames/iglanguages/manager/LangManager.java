@@ -1,7 +1,7 @@
 package me.icegames.iglanguages.manager;
 
 import me.icegames.iglanguages.IGLanguages;
-import me.icegames.iglanguages.api.TranslationPolicy;
+import me.icegames.iglanguages.api.TranslationExtension;
 import me.icegames.iglanguages.storage.PlayerLangStorage;
 import me.icegames.iglanguages.util.GetLocale;
 import me.icegames.iglanguages.util.LangEnum;
@@ -38,7 +38,9 @@ public class LangManager {
     private final Map<String, Map<String, Map<String, String>>> byLangByCategory = new HashMap<>();
     // lang → (key → category)
     private final Map<String, Map<String, String>> keyToCategoryByLang = new HashMap<>();
-    private TranslationPolicy policy;
+
+    // for extension
+    private java.util.List<TranslationExtension> exts;
 
     public LangManager(IGLanguages plugin, PlayerLangStorage storage) {
         this.plugin = plugin;
@@ -114,7 +116,7 @@ public class LangManager {
         // clear raw cache because values may have changed
         clearCache();
         loadPlayerLanguages();
-        refreshPolicy();
+        refreshExtensions();
     }
 
     private void flattenSectionUnderscore(ConfigurationSection section, String prefix, Map<String, String> out) {
@@ -187,16 +189,6 @@ public class LangManager {
         }
     }
 
-    private void refreshPolicy() {
-        try {
-            org.bukkit.plugin.RegisteredServiceProvider<TranslationPolicy> rsp =
-                    Bukkit.getServicesManager().getRegistration(TranslationPolicy.class);
-            policy = (rsp != null) ? rsp.getProvider() : null;
-        } catch (Throwable t) {
-            policy = null;
-        }
-    }
-
     private String categoryOf(String lang, String keyLower) {
         Map<String, String> m = keyToCategoryByLang.get(lang);
         if (m != null) {
@@ -211,10 +203,6 @@ public class LangManager {
         return ChatColor.translateAlternateColorCodes('&', s);
     }
 
-    private boolean hasPlaceholderAPI() {
-        return Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
-    }
-
     // Get RAW (no colors, no placeholders), from maps only
     private String getRaw(String lang, String keyLower) {
         Map<String, String> langMap = translations.getOrDefault(lang, Collections.<String, String>emptyMap());
@@ -226,45 +214,64 @@ public class LangManager {
     public String getTranslation(Player player, String key) {
         String lang = getPlayerLang(player.getUniqueId());
         String keyLower = key.toLowerCase();
+        String category = categoryOf(lang, keyLower);
+
+        if (exts == null) refreshExtensions();
+
+        // 1) key remap
+        for (TranslationExtension ex : exts) keyLower = ex.mapKey(player, lang, category, keyLower);
         String cacheKey = lang + ":" + keyLower;
 
-        // 1) fetch RAW from cache or maps
-        String raw = translationCache.get(cacheKey);
-        if (raw == null) {
-            raw = getRaw(lang, keyLower);
-            if (raw != null) translationCache.put(cacheKey, raw);
+        // 2) gating (advanced + simple)
+        boolean denied = false, forced = false;
+        for (TranslationExtension ex : exts) {
+            TranslationExtension.Gate g = ex.gate(player, lang, category, keyLower);
+            if (g == me.icegames.iglanguages.api.TranslationExtension.Gate.ALWAYS_DENY) denied = true;
+            if (g == me.icegames.iglanguages.api.TranslationExtension.Gate.ALWAYS_ALLOW) forced = true;
         }
 
-        // 2) consult policy (per-player, per-category)
-        if (policy == null) refreshPolicy();
-        if (policy != null) {
-            boolean allow = true;
-            try {
-                allow = policy.shouldTranslate(player, lang, categoryOf(lang, keyLower), keyLower);
-            } catch (Throwable t) {
-                plugin.getLogger().warning("TranslationPolicy threw: " + t.getMessage());
+        // 3) raw lookup (or override)
+        String raw = null;
+        boolean cacheRaw = true;
+
+        if (!denied) {
+            // try override first (highest priority wins)
+            for (TranslationExtension ex : exts) {
+                TranslationExtension.OverrideResult or = ex.override(player, lang, category, keyLower, null);
+                if (or.handled) { raw = or.value; cacheRaw = or.cacheable; break; }
             }
-            if (!allow) {
-                String fallback = lang.equalsIgnoreCase(defaultLang) ? raw : getRaw(defaultLang, keyLower);
-                raw = (fallback != null) ? fallback : null;
+            // fallback to YAML cache/map
+            if (raw == null) {
+                raw = translationCache.get(cacheKey);
+                if (raw == null) {
+                    raw = getRaw(lang, keyLower); // your existing map lookup
+                    if (raw != null && cacheRaw) translationCache.put(cacheKey, raw);
+                }
             }
+        } else {
+            // denied → fallback to defaultLang
+            raw = getRaw(defaultLang, keyLower);
         }
 
-        // 3) not found path (kept behavior)
+        // 4) not found handling (keep your MessageUtil behavior)
         if (raw == null) {
             String nf = MessageUtil.getMessage(plugin.getMessagesConfig(), "translation_not_found", "{key}", key);
-            String colored = colorize(nf);
-            return hasPlaceholderAPI()
-                    ? me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, colored)
-                    : colored;
+            String formatted = colorize(nf);
+            if (plugin.hasPlaceholderAPI()) formatted = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, formatted);
+            return formatted;
         }
 
-        // 4) format for the player
-        String formatted = colorize(raw);
-        if (hasPlaceholderAPI()) {
-            formatted = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, formatted);
-        }
-        return formatted;
+        // 5) pre-format transforms (raw → raw)
+        for (TranslationExtension ex : exts) raw = ex.preFormat(player, lang, category, keyLower, raw);
+
+        // 6) format (colors + PAPI)
+        String out = colorize(raw);
+        if (plugin.hasPlaceholderAPI()) out = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, out);
+
+        // 7) post-format transforms (formatted → formatted)
+        for (TranslationExtension ex : exts) out = ex.postFormat(player, lang, category, keyLower, out);
+
+        return out;
     }
 
     public String getLangTranslation(String lang, String key) {
@@ -298,5 +305,19 @@ public class LangManager {
 
     public void clearCache() {
         translationCache.clear();
+    }
+
+    private void refreshExtensions() {
+        java.util.List<org.bukkit.plugin.RegisteredServiceProvider<me.icegames.iglanguages.api.TranslationExtension>> regs =
+                new java.util.ArrayList<>(org.bukkit.Bukkit.getServicesManager().getRegistrations(
+                        me.icegames.iglanguages.api.TranslationExtension.class));
+        regs.sort((a,b) -> Integer.compare(
+                b.getProvider().priority(),
+                a.getProvider().priority()));
+        java.util.List<me.icegames.iglanguages.api.TranslationExtension> list = new java.util.ArrayList<>();
+        for (org.bukkit.plugin.RegisteredServiceProvider<me.icegames.iglanguages.api.TranslationExtension> r : regs) {
+            list.add(r.getProvider());
+        }
+        this.exts = java.util.Collections.unmodifiableList(list);
     }
 }
