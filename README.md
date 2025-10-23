@@ -124,6 +124,38 @@ private IGLanguageAPI langAPI;
 ### Depend/Softdepend
 You will need to add ``softdepend: [IGLanguages]``or ``depend: [IGLanguages]`` to your plugin.yml depending on if your plugin requires IGLanguages to be installed or not.
 
+## Creating Plugin Extension
+
+advanced
+- first add api dependency from above
+- example usages for create ``TranslationExtension``
+```
+public final class EconomyLangExt extends JavaPlugin implements TranslationExtension {
+    @Override public void onEnable() {
+        Bukkit.getServicesManager().register(TranslationExtension.class, this, this, ServicePriority.Normal);
+    }
+    @Override public int priority() { return 10; }
+
+    @Override public String mapKey(Player p, String lang, String cat, String key) {
+        if (key.equals("balance") && cat.equals("ui")) return "economy_balance";
+        return key;
+    }
+
+    @Override public OverrideResult override(Player p, String lang, String cat, String key, String currentRaw) {
+        if (key.equals("eco_dynamic_tip")) {
+            String tip = computeTipFast(p); // from in-memory cache
+            return OverrideResult.of("Tip: " + tip, false); // don't cache
+        }
+        return OverrideResult.pass();
+    }
+
+    @Override public String postFormat(Player p, String lang, String cat, String key, String text) {
+        if (cat.equals("system")) return "§7" + text; // grey out system messages
+        return text;
+    }
+}
+```
+
 ---
 
 ## Credits
