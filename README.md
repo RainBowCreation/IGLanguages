@@ -131,9 +131,25 @@ advanced
 - example usages for create ``TranslationExtension``
 ```
 public final class EconomyLangExt extends JavaPlugin implements TranslationExtension {
+    private final EconomyLangExt plugin;
+    
     @Override public void onEnable() {
-        Bukkit.getServicesManager().register(TranslationExtension.class, this, this, ServicePriority.Normal);
+        this.plugin = this;
+        register();
     }
+    
+    @Override public void onDisable() {
+        unregister();
+    }
+    
+    @Override public String name() {
+        return "EconomyLangExt";
+    }
+    
+    @Override Plugin plugin() {
+        return plugin;
+    }
+    
     @Override public int priority() { return 10; }
 
     @Override public String mapKey(Player p, String lang, String cat, String key) {

@@ -11,6 +11,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.io.File;
 import java.util.*;
@@ -307,17 +308,16 @@ public class LangManager {
         translationCache.clear();
     }
 
-    private void refreshExtensions() {
-        java.util.List<org.bukkit.plugin.RegisteredServiceProvider<me.icegames.iglanguages.api.TranslationExtension>> regs =
-                new java.util.ArrayList<>(org.bukkit.Bukkit.getServicesManager().getRegistrations(
-                        me.icegames.iglanguages.api.TranslationExtension.class));
+    public void refreshExtensions() {
+        List<RegisteredServiceProvider<TranslationExtension>> regs = new ArrayList<>(Bukkit.getServicesManager().getRegistrations(TranslationExtension.class));
         regs.sort((a,b) -> Integer.compare(
                 b.getProvider().priority(),
                 a.getProvider().priority()));
-        java.util.List<me.icegames.iglanguages.api.TranslationExtension> list = new java.util.ArrayList<>();
-        for (org.bukkit.plugin.RegisteredServiceProvider<me.icegames.iglanguages.api.TranslationExtension> r : regs) {
-            list.add(r.getProvider());
+        List<TranslationExtension> list = new ArrayList<>();
+        for (RegisteredServiceProvider<TranslationExtension> r : regs) {
+            TranslationExtension t = r.getProvider();
+            list.add(t);
         }
-        this.exts = java.util.Collections.unmodifiableList(list);
+        this.exts = Collections.unmodifiableList(list);
     }
 }

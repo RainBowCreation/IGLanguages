@@ -1,6 +1,9 @@
 package me.icegames.iglanguages.api;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -8,6 +11,12 @@ import org.jetbrains.annotations.Nullable;
  * Higher priority runs earlier.
  */
 public interface TranslationExtension {
+    /** Extenstion Name */
+    String name();
+
+    /** Plugin Instance */
+    Plugin plugin();
+
     /** Larger runs earlier. Use 0 as default. */
     default int priority() { return 0; }
 
@@ -40,5 +49,21 @@ public interface TranslationExtension {
         }
         public static OverrideResult pass() { return new OverrideResult(false, null, true); }
         public static OverrideResult of(String raw, boolean cacheable) { return new OverrideResult(true, raw, cacheable); }
+    }
+
+    default void register() {
+        Bukkit.getServicesManager().register(TranslationExtension.class, this, plugin(), ServicePriority.Normal);
+        System.out.println("\\u001B[1;30m[\\u001B[0m\\u001B[36mI\\u001B[1;36mG\\u001B[0m\\u001B[1;37m\" + pluginName + \"\\u001B[1;30m]\\u001B[0m Registered TranslatorExtension: " + name());
+        try {
+            me.icegames.iglanguages.IGLanguages.getInstance().getLangManager().refreshExtensions();
+        }
+        catch (Exception ignored) {}
+    }
+
+    default void unregister() {
+        try {
+            Bukkit.getServicesManager().unregister(TranslationExtension.class, this);
+            me.icegames.iglanguages.IGLanguages.getInstance().getLangManager().refreshExtensions();
+        } catch (Exception ignored) {}
     }
 }

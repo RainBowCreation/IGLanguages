@@ -36,7 +36,7 @@ public class IGLanguages extends JavaPlugin {
     private final String pluginCompleteName = "IGLanguages";
     private String pluginVersion;
     private final String pluginDescription = "The Multi-Language Plugin";
-    private String consolePrefix;
+    public String consolePrefix;
     private boolean isPlaceholderLoaded = false;
 
     private void startingBanner() {
@@ -83,13 +83,12 @@ public class IGLanguages extends JavaPlugin {
             getLogger().warning("If you want to use auto-translate placeholder please install PlaceholderAPI to your plugins/ folder");
         }
 
-        getLogger().info("Registering IGLanguageAPI");
+        getLogger().info(consolePrefix + "Registering IGLanguageAPI");
         api = new IGLanguagesAPI(langManager);
 
         this.actionsManager = new ActionsManager(this);
         getCommand("lang").setExecutor(new LangCommand(langManager, actionsManager, this));
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(langManager, actionsManager, this), this);
-        //getServer().getPluginManager().registerEvent(new PackageListener(this), this);
 
         new UpdateChecker(this, UpdateCheckSource.SPIGOT, SPIGOT_RESOURCE_ID)
                 .checkEveryXHours(24)

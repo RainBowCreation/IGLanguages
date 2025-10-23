@@ -129,4 +129,9 @@ public class IGLanguagesAPI {
     public List<String> getAvailableCategories(String lang) {
         return langManager.getAvailableCategories(lang);
     }
+
+    /**
+     * Refresh and load all extension
+     */
+    public void refreshExtension() { langManager.refreshExtensions(); }
 }
